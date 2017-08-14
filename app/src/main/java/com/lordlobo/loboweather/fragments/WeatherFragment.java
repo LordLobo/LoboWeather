@@ -1,8 +1,10 @@
 package com.lordlobo.loboweather.fragments;
 
+import android.content.SharedPreferences;
 import android.graphics.Typeface;
 import android.os.Bundle;
 import android.os.Handler;
+import android.preference.PreferenceManager;
 import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -32,6 +34,8 @@ public class WeatherFragment extends android.app.Fragment {
 
     String city;
 
+    String uom;
+
     public WeatherFragment(){
         handler = new Handler();
     }
@@ -45,6 +49,8 @@ public class WeatherFragment extends android.app.Fragment {
         currentTemperatureField = rootView.findViewById(R.id.current_temperature_field);
         weatherIcon = rootView.findViewById(R.id.weather_icon);
         weatherIcon.setTypeface(weatherFont);
+
+        uom = prefUnits();
 
         return rootView;
     }
@@ -63,7 +69,9 @@ public class WeatherFragment extends android.app.Fragment {
     private void updateWeatherData(final String city){
         new Thread(){
             public void run(){
-                final JSONObject json = WeatherNetworking.getJSON(getActivity(), city);
+                String units = prefUnits();
+
+                final JSONObject json = WeatherNetworking.getJSON(getActivity(), city, units);
                 if(json == null){
                     handler.post(new Runnable(){
                         public void run(){
@@ -83,6 +91,13 @@ public class WeatherFragment extends android.app.Fragment {
         }.start();
     }
 
+    private String prefUnits() {
+        SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(getActivity().getBaseContext());
+        String uom = prefs.getString(getString(R.string.unitOfMeasureKey), "imperial");
+
+        return uom;
+    }
+
     private void renderWeather(JSONObject json){
         try {
             cityField.setText(json.getString("name").toUpperCase(Locale.US) +
@@ -91,13 +106,20 @@ public class WeatherFragment extends android.app.Fragment {
 
             JSONObject details = json.getJSONArray("weather").getJSONObject(0);
             JSONObject main = json.getJSONObject("main");
+
             detailsField.setText(
                     details.getString("description").toUpperCase(Locale.US) +
                             "\n" + "Humidity: " + main.getString("humidity") + "%" +
                             "\n" + "Pressure: " + main.getString("pressure") + " hPa");
 
+            String tempSuffix = " F";
+
+            if (uom.equals("metric")) {
+                tempSuffix = "C";
+            }
+
             currentTemperatureField.setText(
-                    String.format("%.2f", main.getDouble("temp")) + "F");
+                    String.format("%.2f", main.getDouble("temp")) + tempSuffix);
 
             DateFormat df = DateFormat.getDateTimeInstance();
             String updatedOn = df.format(new Date(json.getLong("dt")*1000));

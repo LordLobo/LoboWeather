@@ -1,7 +1,9 @@
 package com.lordlobo.loboweather.networking;
 
+import android.app.Activity;
 import android.content.Context;
 import android.content.SharedPreferences;
+import android.preference.PreferenceManager;
 
 import com.lordlobo.loboweather.R;
 import com.lordlobo.loboweather.utility.Constants;
@@ -15,23 +17,12 @@ import java.net.URL;
 
 public class WeatherNetworking {
 
-    public static JSONObject getJSON(Context context, String city){
+    public static JSONObject getJSON(Context context, String city, String units){
         try {
-            URL url = new URL(String.format(Constants.WeatherAPI, city));
+            URL url = new URL(String.format(Constants.WeatherAPI, city, units));
             HttpURLConnection connection = (HttpURLConnection)url.openConnection();
 
-            // we're going to store the app id in prefs so we don't need to keep a key in source control
-            SharedPreferences prefs = context.getSharedPreferences("loboWeather", Context.MODE_PRIVATE);
-            String apiId = prefs.getString("apiId", "");
-
-            if (apiId == "") {
-                // get the id from the strings.xml file
-                apiId = context.getString(R.string.open_weather_maps_app_id);
-                prefs.edit().putString("apiId", apiId).apply();
-
-                // after first run you should be able to remove the api key from strings.xml
-            }
-
+            String apiId = retrieveApiId(context);
             connection.addRequestProperty("x-api-key", apiId);
 
             BufferedReader reader = new BufferedReader(new InputStreamReader(connection.getInputStream()));
@@ -55,5 +46,23 @@ public class WeatherNetworking {
         } catch (Exception e) {
             return null;
         }
+    }
+
+    public static String retrieveApiId(Context context) {
+        // we're going to store the app id in prefs so we don't need to keep a key in source control
+        Activity ac = (Activity)context;
+        SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(ac.getBaseContext());
+
+        String apiId = prefs.getString("apiId", "");
+
+        if (apiId.equals("")) {
+            // get the id from the strings.xml file
+            apiId = context.getString(R.string.open_weather_maps_app_id);
+            prefs.edit().putString("apiId", apiId).apply();
+
+            // after first run you should be able to remove the api key from strings.xml
+        }
+
+        return apiId;
     }
 }
