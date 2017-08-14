@@ -50,7 +50,18 @@ public class WeatherFragment extends android.app.Fragment {
         weatherIcon = rootView.findViewById(R.id.weather_icon);
         weatherIcon.setTypeface(weatherFont);
 
-        uom = prefUnits();
+        updateWeatherData(city);
+
+        // note that this will refresh the view every 15m,
+        // however the weather data may not be refreshed
+        handler.postDelayed( new Runnable() {
+
+            @Override
+            public void run() {
+                updateWeatherData(city);
+                handler.postDelayed(this, 60 * 15000);
+            }
+        }, 60 * 15000);
 
         return rootView;
     }
@@ -62,16 +73,24 @@ public class WeatherFragment extends android.app.Fragment {
         weatherFont = Typeface.createFromAsset(getActivity().getAssets(), "weathericons.ttf");
 
         city = getActivity().getIntent().getStringExtra("cityName");
+    }
 
+    @Override
+    public void onResume()
+    {
+        super.onResume();
+        uom = prefUnits();
         updateWeatherData(city);
     }
 
-    private void updateWeatherData(final String city){
+    private void updateWeatherData(final String selectedCity){
+        city = selectedCity;
+
         new Thread(){
             public void run(){
                 String units = prefUnits();
 
-                final JSONObject json = WeatherNetworking.getJSON(getActivity(), city, units);
+                final JSONObject json = WeatherNetworking.getJSON(getActivity(), selectedCity, units);
                 if(json == null){
                     handler.post(new Runnable(){
                         public void run(){
@@ -93,9 +112,7 @@ public class WeatherFragment extends android.app.Fragment {
 
     private String prefUnits() {
         SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(getActivity().getBaseContext());
-        String uom = prefs.getString(getString(R.string.unitOfMeasureKey), "imperial");
-
-        return uom;
+        return prefs.getString(getString(R.string.unitOfMeasureKey), "imperial");
     }
 
     private void renderWeather(JSONObject json){
@@ -129,8 +146,8 @@ public class WeatherFragment extends android.app.Fragment {
                     json.getJSONObject("sys").getLong("sunrise") * 1000,
                     json.getJSONObject("sys").getLong("sunset") * 1000);
 
-        }catch(Exception e){
-            Log.e("SimpleWeather", "One or more fields not found in the JSON data");
+        } catch (Exception e) {
+            Log.e("LoboWeather", "something not found in the JSON data");
         }
     }
 
@@ -163,7 +180,4 @@ public class WeatherFragment extends android.app.Fragment {
         weatherIcon.setText(icon);
     }
 
-    public void changeCity(String city){
-        updateWeatherData(city);
-    }
 }
