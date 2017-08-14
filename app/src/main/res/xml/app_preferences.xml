@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<PreferenceScreen xmlns:android="http://schemas.android.com/apk/res/android">
+
+    <ListPreference
+        android:defaultValue="0"
+        android:entries="@array/unitOfMeasure_entries"
+        android:entryValues="@array/unitOfMeasure_values"
+        android:key="@string/unitOfMeasureKey"
+        android:negativeButtonText="@null"
+        android:positiveButtonText="@null"
+        android:title="Unit of Measure"
+        android:summary="%s" />
+
+</PreferenceScreen>
