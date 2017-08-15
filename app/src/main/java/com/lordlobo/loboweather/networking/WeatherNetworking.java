@@ -17,6 +17,8 @@ import java.net.URL;
 
 public class WeatherNetworking {
 
+    // q=%s&units=%s - basic query
+    // zip=[zip],[countryCode] for zip query
     public static JSONObject getJSON(Context context, String city, String units){
         try {
             URL url = new URL(String.format(Constants.WeatherAPI, city, units));

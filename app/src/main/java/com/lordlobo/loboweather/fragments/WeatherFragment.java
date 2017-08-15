@@ -1,5 +1,9 @@
 package com.lordlobo.loboweather.fragments;
 
+import android.app.AlarmManager;
+import android.app.Fragment;
+import android.app.PendingIntent;
+import android.content.Intent;
 import android.content.SharedPreferences;
 import android.graphics.Typeface;
 import android.os.Bundle;
@@ -9,11 +13,13 @@ import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.Button;
 import android.widget.TextView;
 import android.widget.Toast;
 
 import com.lordlobo.loboweather.R;
 import com.lordlobo.loboweather.networking.WeatherNetworking;
+import com.lordlobo.loboweather.receivers.VibrateReceiver;
 
 import org.json.JSONObject;
 
@@ -21,7 +27,9 @@ import java.text.DateFormat;
 import java.util.Date;
 import java.util.Locale;
 
-public class WeatherFragment extends android.app.Fragment {
+import static android.content.Context.ALARM_SERVICE;
+
+public class WeatherFragment extends Fragment {
     Typeface weatherFont;
 
     TextView cityField;
@@ -29,6 +37,8 @@ public class WeatherFragment extends android.app.Fragment {
     TextView detailsField;
     TextView currentTemperatureField;
     TextView weatherIcon;
+
+    Button bcButton;
 
     Handler handler;
 
@@ -41,8 +51,10 @@ public class WeatherFragment extends android.app.Fragment {
     }
 
     @Override
-    public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
+    public View onCreateView(LayoutInflater inflater, final ViewGroup container, Bundle savedInstanceState) {
+
         View rootView = inflater.inflate(R.layout.fragment_weather, container, false);
+
         cityField = rootView.findViewById(R.id.city_field);
         updatedField = rootView.findViewById(R.id.updated_field);
         detailsField = rootView.findViewById(R.id.details_field);
@@ -55,53 +67,75 @@ public class WeatherFragment extends android.app.Fragment {
         // note that this will refresh the view every 15m,
         // however the weather data may not be refreshed
         handler.postDelayed( new Runnable() {
-
             @Override
             public void run() {
+                Log.d("Refresh", "Weather Refresthed for " + city);
                 updateWeatherData(city);
                 handler.postDelayed(this, 60 * 15000);
             }
         }, 60 * 15000);
+
+        bcButton = rootView.findViewById(R.id.bcButton);
+
+        bcButton.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                Intent intent = new Intent(getActivity(), VibrateReceiver.class);
+                PendingIntent pendingIntent = PendingIntent.getBroadcast(getActivity().getApplicationContext(), 234324243, intent, 0);
+                AlarmManager alarmManager = (AlarmManager)getActivity().getSystemService(ALARM_SERVICE);
+                alarmManager.set(AlarmManager.RTC_WAKEUP, System.currentTimeMillis() + (10 * 1000), pendingIntent);
+                Toast.makeText(getContext(), "10 secs", Toast.LENGTH_LONG).show();
+                        //"Alarm set in 10 seconds", Toast.LENGTH_LONG).show();
+            }
+        });
 
         return rootView;
     }
 
     @Override
     public void onCreate(Bundle savedInstanceState) {
+
         super.onCreate(savedInstanceState);
 
         weatherFont = Typeface.createFromAsset(getActivity().getAssets(), "weathericons.ttf");
 
         city = getActivity().getIntent().getStringExtra("cityName");
+
+        //FragmentWeatherBinding binding = DataBindingUtil.setContentView(this, R.layout.fragment_weather);
+
     }
 
     @Override
-    public void onResume()
-    {
+    public void onResume() {
         super.onResume();
+
+        // this kinda 'fakes' a listener on prefs but accomplishes the same effect
         uom = prefUnits();
+
         updateWeatherData(city);
     }
 
-    private void updateWeatherData(final String selectedCity){
+    private void updateWeatherData(final String selectedCity) {
+
         city = selectedCity;
 
-        new Thread(){
-            public void run(){
+        // this could be architect'd better (i.e. out of the 'controller') but isn't terribly relevant outside of using more libraries
+        new Thread() {
+            public void run() {
                 String units = prefUnits();
 
                 final JSONObject json = WeatherNetworking.getJSON(getActivity(), selectedCity, units);
-                if(json == null){
-                    handler.post(new Runnable(){
-                        public void run(){
+                if (json == null) {
+                    handler.post(new Runnable() {
+                        public void run() {
                             Toast.makeText(getActivity(),
                                     getActivity().getString(R.string.place_not_found),
                                     Toast.LENGTH_LONG).show();
                         }
                     });
                 } else {
-                    handler.post(new Runnable(){
-                        public void run(){
+                    handler.post(new Runnable() {
+                        public void run() {
                             renderWeather(json);
                         }
                     });
@@ -132,14 +166,13 @@ public class WeatherFragment extends android.app.Fragment {
             String tempSuffix = " F";
 
             if (uom.equals("metric")) {
-                tempSuffix = "C";
+                tempSuffix = " C";
             }
 
-            currentTemperatureField.setText(
-                    String.format("%.2f", main.getDouble("temp")) + tempSuffix);
+            currentTemperatureField.setText(String.format("%.2f", main.getDouble("temp")) + tempSuffix);
 
             DateFormat df = DateFormat.getDateTimeInstance();
-            String updatedOn = df.format(new Date(json.getLong("dt")*1000));
+            String updatedOn = df.format(new Date(json.getLong("dt") * 1000));
             updatedField.setText("Last update: " + updatedOn);
 
             setWeatherIcon(details.getInt("id"),
@@ -179,5 +212,4 @@ public class WeatherFragment extends android.app.Fragment {
         }
         weatherIcon.setText(icon);
     }
-
 }
