@@ -1,9 +1,7 @@
 package com.lordlobo.loboweather.models;
 
-public class CurrentTemp {
-    public String Temp;
+import android.databinding.ObservableField;
 
-    public CurrentTemp() {
-        Temp = "";
-    }
+public class CurrentTemp {
+    public ObservableField<String> temp = new ObservableField<>("");
 }

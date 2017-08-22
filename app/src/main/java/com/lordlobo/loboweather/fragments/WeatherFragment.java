@@ -5,6 +5,7 @@ import android.app.Fragment;
 import android.app.PendingIntent;
 import android.content.Intent;
 import android.content.SharedPreferences;
+import android.databinding.DataBindingUtil;
 import android.graphics.Typeface;
 import android.os.Bundle;
 import android.os.Handler;
@@ -18,6 +19,8 @@ import android.widget.TextView;
 import android.widget.Toast;
 
 import com.lordlobo.loboweather.R;
+import com.lordlobo.loboweather.databinding.FragmentWeatherBinding;
+import com.lordlobo.loboweather.models.CurrentTemp;
 import com.lordlobo.loboweather.networking.WeatherNetworking;
 import com.lordlobo.loboweather.receivers.VibrateReceiver;
 
@@ -46,6 +49,9 @@ public class WeatherFragment extends Fragment {
 
     String uom;
 
+    FragmentWeatherBinding binding;
+    CurrentTemp myCurrentTemp;
+
     public WeatherFragment(){
         handler = new Handler();
     }
@@ -53,7 +59,8 @@ public class WeatherFragment extends Fragment {
     @Override
     public View onCreateView(LayoutInflater inflater, final ViewGroup container, Bundle savedInstanceState) {
 
-        View rootView = inflater.inflate(R.layout.fragment_weather, container, false);
+        binding = DataBindingUtil.inflate(inflater, R.layout.fragment_weather, container, false);
+        View rootView = binding.getRoot();
 
         cityField = rootView.findViewById(R.id.city_field);
         updatedField = rootView.findViewById(R.id.updated_field);
@@ -84,10 +91,13 @@ public class WeatherFragment extends Fragment {
                 PendingIntent pendingIntent = PendingIntent.getBroadcast(getActivity().getApplicationContext(), 234324243, intent, 0);
                 AlarmManager alarmManager = (AlarmManager)getActivity().getSystemService(ALARM_SERVICE);
                 alarmManager.set(AlarmManager.RTC_WAKEUP, System.currentTimeMillis() + (10 * 1000), pendingIntent);
-                Toast.makeText(getContext(), "10 secs", Toast.LENGTH_LONG).show();
-                        //"Alarm set in 10 seconds", Toast.LENGTH_LONG).show();
+                Toast.makeText(getActivity(), "will vibrate in 10 secs", Toast.LENGTH_LONG).show();
             }
         });
+
+        // databinding
+        myCurrentTemp = new CurrentTemp();
+        binding.setCurTemp(myCurrentTemp);
 
         return rootView;
     }
@@ -100,9 +110,6 @@ public class WeatherFragment extends Fragment {
         weatherFont = Typeface.createFromAsset(getActivity().getAssets(), "weathericons.ttf");
 
         city = getActivity().getIntent().getStringExtra("cityName");
-
-        //FragmentWeatherBinding binding = DataBindingUtil.setContentView(this, R.layout.fragment_weather);
-
     }
 
     @Override
@@ -169,7 +176,11 @@ public class WeatherFragment extends Fragment {
                 tempSuffix = " C";
             }
 
-            currentTemperatureField.setText(String.format("%.2f", main.getDouble("temp")) + tempSuffix);
+            // non-databound way
+            // currentTemperatureField.setText(String.format("%.2f", main.getDouble("temp")) + tempSuffix);
+
+            // databound way
+            binding.getCurTemp().temp.set(String.format("%.2f", main.getDouble("temp")) + tempSuffix);
 
             DateFormat df = DateFormat.getDateTimeInstance();
             String updatedOn = df.format(new Date(json.getLong("dt") * 1000));
