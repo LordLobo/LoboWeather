@@ -19,7 +19,7 @@ public class WeatherNetworking {
 
     // q=%s&units=%s - basic query
     // zip=[zip],[countryCode] for zip query
-    public static JSONObject getJSON(Context context, String city, String units){
+    public static JSONObject getJSON(Context context, String city, String units) {
         try {
             URL url = new URL(String.format(Constants.WeatherAPI, city, units));
             HttpURLConnection connection = (HttpURLConnection)url.openConnection();
@@ -50,11 +50,11 @@ public class WeatherNetworking {
         }
     }
 
-    public static String retrieveApiId(Context context) {
+    private static String retrieveApiId(Context context) {
         // we're going to store the app id in prefs so we don't need to keep a key in source control
         Activity ac = (Activity)context;
         SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(ac.getBaseContext());
-
+        
         String apiId = prefs.getString("apiId", "");
 
         if (apiId.equals("")) {

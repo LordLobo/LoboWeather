@@ -5,6 +5,7 @@ import android.content.Intent;
 import android.content.SharedPreferences;
 import android.graphics.Color;
 import android.os.Bundle;
+import android.support.annotation.NonNull;
 import android.support.v4.app.Fragment;
 import android.text.TextUtils;
 import android.view.LayoutInflater;
@@ -22,6 +23,7 @@ import com.lordlobo.loboweather.activities.WeatherActivity;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Objects;
 
 public class MainActivityFragment extends Fragment {
 
@@ -38,7 +40,7 @@ public class MainActivityFragment extends Fragment {
     public MainActivityFragment() { }
 
     @Override
-    public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
+    public View onCreateView(@NonNull LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
 
         View rootView = inflater.inflate(R.layout.fragment_main, container, false);
 
@@ -47,7 +49,7 @@ public class MainActivityFragment extends Fragment {
         visitedList = rootView.findViewById(R.id.visitedList);
         statusText = rootView.findViewById(R.id.statusText);
 
-        prefs = this.getActivity().getPreferences(Activity.MODE_PRIVATE);
+        prefs = Objects.requireNonNull(this.getActivity()).getPreferences(Activity.MODE_PRIVATE);
         visitedCities = new ArrayList<>(Arrays.asList(prefs.getString(visitedKeyName, "").split(",")));
 
         visitedListAdapter = new ArrayAdapter<>(this.getActivity(), R.layout.listview_visitedcitiescell, visitedCities);
